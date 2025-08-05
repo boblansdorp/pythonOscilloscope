@@ -64,6 +64,9 @@ print("Samplerate: ", sampleRate)
 timescale = 1/sampleRate
 dt = 1 / sampleRate
 
+YINC = float(scope.query(":WAV:YINC? CHAN1").strip())
+print("YINC: ", YINC)
+
 timeoffset = 0
 voltscale = float(scope.query(':CHAN1:SCAL?').strip())
 voltoffset = float(scope.query(":CHAN1:OFFS?").strip())
@@ -125,9 +128,18 @@ for i in range(1):
 
 
             data = np.frombuffer(data_bytes, dtype=np.uint8)
+            print("Raw byte min:", data.min())
+            print("Raw byte max:", data.max())
+
+
             #voltages = ((240 - data) * (voltscale / 25.0)) - (voltoffset + voltscale * 4.6)
-            #voltages = (data - 130.0) * voltscale / 25.0  - voltoffset 
-            voltages = (data - y_reference - y_origin) * voltscale / 25.0 # - y_increment 
+            voltages = (data - 127.0) * voltscale / 25.0 - voltoffset # this works in limited conditions! 500 mV per bin and 1 ms per bin
+
+            #voltages = (data - y_reference - y_origin) * voltscale / 25.0  # - y_increment 
+            # voltages = (data - y_reference - y_origin) * YINC  # - y_increment 
+            print("Voltage  min:", voltages.min())
+            print("Voltage max:", voltages.max())
+
             data_matrix.append(voltages)
 
         except Exception as e:
