@@ -67,10 +67,10 @@ def update_plot(t, d, label="Waveform"):
     canvas.draw()
 
 def on_calibrate():
-    global cached_data, voltage_scale_factor
+    global cached_data, voltage_scale_factor, voltage_offset
 
     try:
-        t, d, byteRange, y_increment, voltscale = acquire_rigol_waveform()
+        t, d, byteRange, y_increment, voltscale, _ = acquire_rigol_waveform()
         option1 = 3.0 / byteRange
         option2 = voltscale / 20
         option3 = y_increment
@@ -114,7 +114,7 @@ def on_calibrate():
             voltage_offset = value
             offset_popup.destroy()
             print("Selected offset =", voltage_offset)
-            scale_factor_label.config(text=f"Selected offset factor: {voltage_offset:.6f} bytes")
+            offset_label.config(text=f"Selected offset factor: {voltage_offset:.6f} bytes")
             update_plot(t, d, label="Calibration Waveform")
 
         
@@ -146,6 +146,7 @@ def on_calibrate():
 
 
 def on_collect_data():
+    global voltage_scale_factor, voltage_offset
     param = param_entry.get()
     filename = filename_entry.get()
     add_hdr = add_header_var.get()
@@ -155,16 +156,18 @@ def on_collect_data():
         return
 
     try:
-        t, v = acquire_rigol_waveform()
+        #t, v = acquire_rigol_waveform()
+        t, d, byteRange, y_increment, voltscale, params = acquire_rigol_waveform()
+        v = (d-voltage_offset)*voltage_scale_factor
         update_plot(t, v, label="Collected Waveform")
 
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
             if add_hdr:
-                writer.writerow(["Time [s]", "Voltage [V]"])
+                f.write(params + "\n---\n")
                 writer.writerow(["Parameters:", param])
                 writer.writerow([])
-
+                writer.writerow(["Time [s]", "Voltage [V]"])
             for t_val, v_val in zip(t, v):
                 writer.writerow([t_val, v_val])
 
