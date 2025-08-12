@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 from rigol_query import acquire_rigol_waveform
 import numpy as np
@@ -22,9 +22,19 @@ ax.set_xlabel("Time [ms]")
 ax.set_ylabel("Voltage [V]")
 ax.grid(True)
 
+
+
+# Canvas
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas_widget = canvas.get_tk_widget()
-canvas_widget.pack(padx=10, pady=10)
+canvas_widget.pack(padx=10, pady=(10, 0), fill="both", expand=True)
+
+# Toolbar
+toolbar_frame = tk.Frame(root)
+toolbar_frame.pack(fill="x", padx=10, pady=(0, 8))
+
+toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
+toolbar.update()
 
 # --- Control frame ---
 control_frame = tk.Frame(root)
@@ -127,14 +137,9 @@ def on_calibrate():
 
         tk.Label(offset_popup, text="Select voltage offset:").pack(pady=(5, 10))
         minimumDetected = min(d)
+        
         tk.Button(offset_popup, text=f"Use detected minimum: {int(offset_option1)}",
           command=lambda: select_offset(offset_option1)).pack(pady=3)
-
-        tk.Button(offset_popup, text=f"Use {offset_option2:.6f}",
-                command=lambda: select_offset(option2)).pack(pady=3)
-
-        tk.Button(offset_popup, text=f"Use {offset_option3:.6f}",
-                command=lambda: select_offset(option3)).pack(pady=3)
 
         
         # Cache data and update plot while waiting for user selection
@@ -159,7 +164,7 @@ def on_collect_data():
         #t, v = acquire_rigol_waveform()
         t, d, byteRange, y_increment, voltscale, params = acquire_rigol_waveform()
         v = (d-voltage_offset)*voltage_scale_factor
-        update_plot(t, v, label="Collected Waveform")
+        update_plot(t, d, label="Collected Waveform")
 
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
