@@ -68,7 +68,9 @@ cached_data = None
 
 def update_plot(t, d, label="Waveform"):
     ax.clear()
-    voltage = (d-voltage_offset)*voltage_scale_factor
+    #voltage = (d-voltage_offset)*voltage_scale_factor
+    voltage = (d.astype(np.float64) - float(voltage_offset)) * float(voltage_scale_factor)
+
     ax.plot(t * 1e3, voltage)
     ax.set_title(label)
     ax.set_xlabel("Time [ms]")
@@ -163,7 +165,9 @@ def on_collect_data():
     try:
         #t, v = acquire_rigol_waveform()
         t, d, byteRange, y_increment, voltscale, params = acquire_rigol_waveform()
-        v = (d-voltage_offset)*voltage_scale_factor
+        #v = (d-voltage_offset)*voltage_scale_factor
+        v = (d.astype(np.float64) - float(voltage_offset)) * float(voltage_scale_factor)
+
         update_plot(t, d, label="Collected Waveform")
 
         with open(filename, 'w', newline='') as f:
@@ -172,9 +176,9 @@ def on_collect_data():
                 f.write(params + "\n---\n")
                 writer.writerow(["Parameters:", param])
                 writer.writerow([])
-                writer.writerow(["Time [s]", "Voltage [V]"])
-            for t_val, v_val in zip(t, v):
-                writer.writerow([t_val, v_val])
+                writer.writerow(["Time [s]", "Voltage [V], byteval"])
+            for t_val, v_val, d_val in zip(t, v, d):
+                writer.writerow([t_val, v_val, d_val])
 
         messagebox.showinfo("Saved", f"Data saved to {filename}")
     except Exception as e:
